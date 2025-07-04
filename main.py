@@ -12,10 +12,11 @@ NOTIFY_TRAFFIC_PERCENTS = sorted(
     config("NOTIFY_TRAFFIC_PERCENTS", cast=Csv(int)),  # type: ignore
     reverse=True,
 )
+PROXY = config("PROXY", default=None)
 INTERVAL_MINUTES = config("INTERVAL_MINUTES", cast=int)
 NEXT_TRAFFIC_PERCENT_THRESHOLD = {}
 
-client = httpx.AsyncClient(timeout=20, verify=False)
+client = httpx.AsyncClient(timeout=20.0, verify=False, proxy=PROXY)  # type: ignore
 logger = logging.getLogger(__name__)
 ServerStats = namedtuple(
     "ServerStats",
