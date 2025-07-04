@@ -75,6 +75,9 @@ NOTIFY_TRAFFIC_PERCENTS=10,5,1
 
 # فاصله زمانی اجرای برنامه (بر حسب دقیقه)
 INTERVAL_MINUTES=5
+
+در صورتی که با سرور خارجی به پنل virtualizor ارتباط نمیگیرید، میتونید یه پروکسی http با ایپی ایران ست کنید. (با پنل xui میتونید راحت بسازید)
+PROXY=http://your.proxy:port
 ```
 
 ---
