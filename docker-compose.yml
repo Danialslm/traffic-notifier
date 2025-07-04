@@ -1,0 +1,10 @@
+services:
+  app:
+    build: .
+    env_file: .env
+    restart: on-failure:3
+    entrypoint: "uv run main.py"
+    volumes:
+      - ./:/app
+    environment:
+      - TZ=Asia/Tehran
