@@ -7,9 +7,9 @@ WORKDIR /app
 
 COPY pyproject.toml uv.lock ./
 
-RUN apt update \
-    && apt install -y bash \
-    && rm -rf /var/cache/apt/* \
+RUN apk update \
+    && apk add bash \
+    && rm -rf /var/cache/apk/* \
     && pip install --no-cache-dir --upgrade pip uv \
     && uv sync
 
