@@ -30,7 +30,9 @@ ServerStats = namedtuple(
 class ServerStatsFetchException(Exception):
     """Custom exception for server stats fetch errors."""
 
-    pass
+    def __init__(self, message):
+        super().__init__(message)
+        self.message = message
 
 
 async def tg_bot_send_message(chat_id, message):
@@ -95,7 +97,7 @@ async def check_and_notify():
         try:
             server_stats = await completed
         except ServerStatsFetchException as e:
-            await tg_bot_send_message(CHAT_ID, e)
+            await tg_bot_send_message(CHAT_ID, e.message)
             continue
 
         if is_threshold_reached(server_stats):
