@@ -16,7 +16,10 @@ PROXY = config("PROXY", default=None)
 INTERVAL_MINUTES = config("INTERVAL_MINUTES", cast=int)
 NEXT_TRAFFIC_PERCENT_THRESHOLD = {}
 
+# client used for server requests
 client = httpx.AsyncClient(timeout=20.0, verify=False, proxy=PROXY)  # type: ignore
+# client used for telegram bot requests
+tg_client = httpx.AsyncClient()
 logger = logging.getLogger(__name__)
 ServerStats = namedtuple(
     "ServerStats",
@@ -44,7 +47,7 @@ async def tg_bot_send_message(chat_id, message):
         "parse_mode": "html",
     }
     try:
-        response = await client.post(url, json=payload)
+        response = await tg_client.post(url, json=payload)
         response.raise_for_status()
         return response.json()
     except httpx.RequestError as e:
