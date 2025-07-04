@@ -49,8 +49,14 @@ async def tg_bot_send_message(chat_id, message):
 
 
 async def fetch_server_data(server) -> ServerStats:
-    response = await client.get(server["url"])
-    if response.status_code != 200:
+    try:
+        response = await client.get(server["url"])
+        response.raise_for_status()
+    except httpx.RequestError as e:
+        raise ServerStatsFetchException(
+            f"Failed to fetch data for server {server['name']}: {e}"
+        )
+    except httpx.HTTPStatusError:
         raise ServerStatsFetchException(
             f"Failed to fetch data for server {server['name']}: {response.text}"
         )
@@ -101,6 +107,7 @@ async def check_and_notify():
 
 
 async def main():
+    logger.info("Starting server traffic monitor...")
     while True:
         await check_and_notify()
         await asyncio.sleep(INTERVAL_MINUTES * 60)
