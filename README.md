@@ -77,6 +77,7 @@ NOTIFY_TRAFFIC_PERCENTS=10,5,1
 INTERVAL_MINUTES=5
 
 در صورتی که با سرور خارجی به پنل virtualizor ارتباط نمیگیرید، میتونید یه پروکسی http با ایپی ایران ست کنید. (با پنل xui میتونید راحت بسازید)
+توجه داشته باشید در صورت ست کردن پروکسی، باید آیپی پروکسی رو به عنوان وایت لیست api key و api password پنل virtualizor در نظر بگیرید!
 PROXY=http://your.proxy:port
 ```
 
