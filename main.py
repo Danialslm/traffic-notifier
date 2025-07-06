@@ -59,16 +59,22 @@ async def tg_bot_send_message(chat_id, message):
 
 
 async def fetch_server_data(server) -> ServerStats:
-    try:
-        response = await client.get(server["url"])
-        response.raise_for_status()
-    except httpx.RequestError as e:
+    retry = 3
+    delay = 0.5
+    exception = None
+    for _ in range(retry):
+        try:
+            response = await client.get(server["url"])
+            response.raise_for_status()
+            break
+        except (httpx.RequestError, httpx.HTTPStatusError) as e:
+            e_message = response.text if isinstance(e, httpx.HTTPStatusError) else e
+            exception = e
+            await asyncio.sleep(delay)
+
+    if exception is not None:
         raise ServerStatsFetchException(
-            f"Failed to fetch data for server {server['name']}: {e}"
-        )
-    except httpx.HTTPStatusError:
-        raise ServerStatsFetchException(
-            f"Failed to fetch data for server {server['name']}: {response.text}"
+            f"Failed to fetch data for server {server['name']}: {e_message}"
         )
 
     data = response.json()
