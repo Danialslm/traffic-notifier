@@ -86,20 +86,18 @@ async def fetch_server_data(server) -> ServerStats:
 
 
 def is_threshold_reached(server_stats):
-    reached = False
-    if server_stats.remaining_traffic_percent <= NEXT_TRAFFIC_PERCENT_THRESHOLD.get(
+    next_threshold = NEXT_TRAFFIC_PERCENT_THRESHOLD.get(
         server_stats.name,
         float("-inf"),
-    ):
-        reached = True
+    )
+    return server_stats.remaining_traffic_percent <= next_threshold
 
-    # set next threshold
+
+def set_next_threshold(server_stats):
     for percent in NOTIFY_TRAFFIC_PERCENTS:
         if percent < server_stats.remaining_traffic_percent:
             NEXT_TRAFFIC_PERCENT_THRESHOLD[server_stats.name] = percent
             break
-
-    return reached
 
 
 async def check_and_notify():
@@ -119,7 +117,8 @@ async def check_and_notify():
                 f"Server: <b>{server_stats.name}</b>\n"
                 f"Remaining Traffic: <code>{server_stats.remaingin_traffic}GB ({server_stats.remaining_traffic_percent}%)</code>"
             )
-            asyncio.create_task(tg_bot_send_message(CHAT_ID, message))
+            await tg_bot_send_message(CHAT_ID, message)
+            set_next_threshold(server_stats)
 
 
 async def main():
