@@ -133,7 +133,7 @@ async def check_and_notify():
     with open("servers.json", "r") as file:
         servers = json.load(file)
 
-    tasks = [fetch_server_data(server) for server in servers]
+    tasks = [fetch_server_data(Server(**server)) for server in servers]
     for completed in asyncio.as_completed(tasks):
         try:
             server_stats = await completed
