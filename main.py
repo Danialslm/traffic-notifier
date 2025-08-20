@@ -145,8 +145,8 @@ async def check_and_notify():
             message = (
                 "⚠️ Alert\n"
                 f"Server: <b>{server_stats.name}</b>\n"
-                f"CPU Usage: <code>{server_stats.cpu_usage_percent}</code>\n"
-                f"RAM Usage: <code>{server_stats.ram_usage_percent}</code>\n"
+                f"CPU Usage: <code>{server_stats.cpu_usage_percent}%</code>\n"
+                f"RAM Usage: <code>{server_stats.ram_usage_percent}%</code>\n"
                 f"Remaining Traffic: <code>{server_stats.remaingin_traffic}GB ({server_stats.remaining_traffic_percent}%)</code>"
             )
             await tg_bot_send_message(CHAT_IDS, message)
