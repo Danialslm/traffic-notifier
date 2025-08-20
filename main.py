@@ -7,7 +7,7 @@ import httpx
 from decouple import Csv, config
 
 BOT_TOKEN = config("BOT_TOKEN")
-CHAT_ID = config("CHAT_ID")
+CHAT_IDS: list[int] = config("CHAT_ID", cast=Csv(int))  # type: ignore
 NOTIFY_TRAFFIC_PERCENTS = sorted(
     config("NOTIFY_TRAFFIC_PERCENTS", cast=Csv(int)),  # type: ignore
     reverse=True,
@@ -47,19 +47,23 @@ class ServerStatsFetchException(Exception):
         self.message = message
 
 
-async def tg_bot_send_message(chat_id, message):
+async def tg_bot_send_message(chat_ids: list[int], message: str):
     url = f"https://api.telegram.org/bot{BOT_TOKEN}/sendMessage"
-    payload = {
-        "chat_id": chat_id,
-        "text": message,
-        "parse_mode": "html",
-    }
-    try:
-        response = await tg_client.post(url, json=payload)
-        response.raise_for_status()
-        return response.json()
-    except httpx.RequestError as e:
-        logger.error(f"Telegram bot request failed: {e}")
+
+    async def _send(chat_id):
+        payload = {
+            "chat_id": chat_id,
+            "text": message,
+            "parse_mode": "html",
+        }
+        try:
+            response = await tg_client.post(url, json=payload)
+            response.raise_for_status()
+            return response.json()
+        except httpx.RequestError as e:
+            logger.error(f"Telegram bot request failed: {e}")
+
+    await asyncio.gather(*[_send(chat_id) for chat_id in chat_ids])
 
 
 async def fetch_server_data(server) -> ServerStats:
@@ -132,7 +136,7 @@ async def check_and_notify():
         try:
             server_stats = await completed
         except ServerStatsFetchException as e:
-            await tg_bot_send_message(CHAT_ID, e.message)
+            await tg_bot_send_message(CHAT_IDS, e.message)
             continue
 
         if is_threshold_reached(server_stats):
@@ -143,7 +147,7 @@ async def check_and_notify():
                 f"RAM Usage: <code>{server_stats.ram_usage_percent}</code>\n"
                 f"Remaining Traffic: <code>{server_stats.remaingin_traffic}GB ({server_stats.remaining_traffic_percent}%)</code>"
             )
-            await tg_bot_send_message(CHAT_ID, message)
+            await tg_bot_send_message(CHAT_IDS, message)
             set_next_traffic_threshold(server_stats)
 
 
