@@ -27,6 +27,8 @@ client = httpx.AsyncClient(
 # client used for telegram bot requests
 tg_client = httpx.AsyncClient()
 logger = logging.getLogger(__name__)
+
+Server = namedtuple("Server", ["name", "url"])
 ServerStats = namedtuple(
     "ServerStats",
     [
@@ -66,13 +68,13 @@ async def tg_bot_send_message(chat_ids: list[int], message: str):
     await asyncio.gather(*[_send(chat_id) for chat_id in chat_ids])
 
 
-async def fetch_server_data(server) -> ServerStats:
+async def fetch_server_data(server: Server) -> ServerStats:
     retry = 3
     delay = 0.5
     exception = None
     for _ in range(retry):
         try:
-            response = await client.get(server["url"])
+            response = await client.get(server.url)
             response.raise_for_status()
             break
         except (httpx.RequestError, httpx.HTTPStatusError) as e:
@@ -82,12 +84,12 @@ async def fetch_server_data(server) -> ServerStats:
 
     if exception is not None:
         raise ServerStatsFetchException(
-            f"Failed to fetch data for server {server['name']}: {e_message}"
+            f"Failed to fetch data for server {server.name}: {e_message}"
         )
 
     data = response.json()
     return ServerStats(
-        server["name"],
+        server.name,
         data["info"]["bandwidth"]["free_gb"],
         data["info"]["bandwidth"]["percent_free"],
         data["info"]["cpu"]["percent"],
