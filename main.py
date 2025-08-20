@@ -12,6 +12,8 @@ NOTIFY_TRAFFIC_PERCENTS = sorted(
     config("NOTIFY_TRAFFIC_PERCENTS", cast=Csv(int)),  # type: ignore
     reverse=True,
 )
+NOTIFY_CPU_USAGE_PERCENT = config("NOTIFY_CPU_USAGE_PERCENT", cast=int)
+NOTIFY_RAM_USAGE_PERCENT = config("NOTIFY_RAM_USAGE_PERCENT", cast=int)
 PROXY = config("PROXY", default=None)
 INTERVAL_MINUTES = config("INTERVAL_MINUTES", cast=int)
 NEXT_TRAFFIC_PERCENT_THRESHOLD = {}
@@ -31,6 +33,8 @@ ServerStats = namedtuple(
         "name",
         "remaingin_traffic",
         "remaining_traffic_percent",
+        "cpu_usage_percent",
+        "ram_usage_percent",
     ],
 )
 
@@ -82,10 +86,12 @@ async def fetch_server_data(server) -> ServerStats:
         server["name"],
         data["info"]["bandwidth"]["free_gb"],
         data["info"]["bandwidth"]["percent_free"],
+        data["info"]["cpu"]["percent"],
+        data["info"]["ram"]["percent"],
     )
 
 
-def is_threshold_reached(server_stats):
+def is_traffic_threshold_reached(server_stats: ServerStats):
     next_threshold = NEXT_TRAFFIC_PERCENT_THRESHOLD.get(
         server_stats.name,
         float("-inf"),
@@ -93,7 +99,24 @@ def is_threshold_reached(server_stats):
     return server_stats.remaining_traffic_percent <= next_threshold
 
 
-def set_next_threshold(server_stats):
+def is_cpu_usage_threshold_reached(server_stats: ServerStats):
+    return server_stats.cpu_usage_percent >= NOTIFY_CPU_USAGE_PERCENT
+
+
+def is_ram_usage_threshold_reached(server_stats: ServerStats):
+    return server_stats.cpu_usage_percent >= NOTIFY_RAM_USAGE_PERCENT
+
+
+def is_threshold_reached(server_stats: ServerStats):
+    funcs = [
+        is_traffic_threshold_reached,
+        is_cpu_usage_threshold_reached,
+        is_ram_usage_threshold_reached,
+    ]
+    return any(func(server_stats) for func in funcs)
+
+
+def set_next_traffic_threshold(server_stats: ServerStats):
     for percent in NOTIFY_TRAFFIC_PERCENTS:
         if percent < server_stats.remaining_traffic_percent:
             NEXT_TRAFFIC_PERCENT_THRESHOLD[server_stats.name] = percent
@@ -114,11 +137,14 @@ async def check_and_notify():
 
         if is_threshold_reached(server_stats):
             message = (
+                "⚠️ Alert\n"
                 f"Server: <b>{server_stats.name}</b>\n"
+                f"CPU Usage: <code>{server_stats.cpu_usage_percent}</code>\n"
+                f"RAM Usage: <code>{server_stats.ram_usage_percent}</code>\n"
                 f"Remaining Traffic: <code>{server_stats.remaingin_traffic}GB ({server_stats.remaining_traffic_percent}%)</code>"
             )
             await tg_bot_send_message(CHAT_ID, message)
-            set_next_threshold(server_stats)
+            set_next_traffic_threshold(server_stats)
 
 
 async def main():
