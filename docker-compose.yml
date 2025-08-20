@@ -2,7 +2,7 @@ services:
   app:
     build: .
     env_file: .env
-    restart: on-failure:3
+    restart: always
     entrypoint: "uv run main.py"
     volumes:
       - ./:/app
